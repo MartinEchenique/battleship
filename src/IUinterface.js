@@ -8,7 +8,7 @@ function generateBoard(id) {
     for (let j = 0; j < 10; j++) {
       const square = document.createElement('div');
       square.classList.add('gridSquare');
-      square.setAttribute('data', `${[i, j]}`);
+      square.setAttribute('data-coordinates', `${[i, j]}`);
       row.appendChild(square);
     }
     container.appendChild(row);
@@ -27,14 +27,16 @@ function addClickEvent(board) {
 function startGame() {
   generateBoard('playerTwoBoard');
   generateBoard('playerOneBoard');
-  addClickEvent('playerOneBoard');
+  addClickEvent('playerTwoBoard');
   const playersInfo = { playerOne: ['tin', true], playerTwo: ['pc', false] };
+  placeBoat();
   events.on('player attack', pupulateBoard);
+  events.on('board changed', pupulateBoard);
   events.emit('create players', playersInfo);
 }
 function pupulateBoard(player) {
   let currentBoard = player.gameBoard.board;
-  let boardId = player.name === 'pc' ? 'playerOneBoard' : 'playerTwoBoard';
+  let boardId = player.name === 'pc' ? 'playerTwoBoard' : 'playerOneBoard';
   const displayGrid = getBoard(boardId);
   for (let i = 0; i < 10; i++) {
     for (let j = 0; j < 10; j++) {
@@ -42,27 +44,47 @@ function pupulateBoard(player) {
       let displaySquare = displayGrid[i][j];
       switch (boardSquare) {
         case -1:
-          displaySquare.style.backgroundColor = 'blue';
+          displaySquare.classList.add('watter');
+
           break;
 
         case 'hit':
-          displaySquare.style.backgroundColor = 'red';
+          displaySquare.style.backgroundColor = 'orange';
           break;
         case 'miss':
           displaySquare.style.backgroundColor = 'grey';
           break;
+        case 'sunk':
+          displaySquare.style.backgroundColor = 'red';
+          break;
         default:
-          displaySquare.style.backgroundColor = 'green';
+          boardId === 'playerTwoBoard'
+            ? (displaySquare.style.backgroundColor = 'blue')
+            : (displaySquare.style.backgroundColor = 'green');
 
           break;
       }
     }
   }
 }
+
 function getBoard(boardId) {
   const grid = Array.from(
     document.getElementById(boardId).childNodes,
   ).map((row) => Array.from(row.childNodes));
   return grid;
 }
+
+function placeBoat() {
+  events.on('boat dragged and dropped', (data) => {
+    let row = +data[0][0];
+    let column = +data[0][1];
+    let length = data[1];
+    let board = getBoard('playerOneBoard');
+    for (let i = 0; i < length; i++) {
+      board[row][column + i].style.backgroundColor = 'green';
+    }
+  });
+}
+
 export { startGame };

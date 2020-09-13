@@ -19,8 +19,18 @@
   padding: 0px;
   margin: 0px;
   border: 2px solid;
-  background-color: red;
+  background-color: green;
+}
+.watter {
+  background-color: blue;
 }
 .draggableBoat.dragging {
   background-color: grey;
+  width: 25px;
+}
+.validDrop {
+  background-color: green;
+}
+.invalidDrop {
+  background-color: red;
 }

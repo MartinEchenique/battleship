@@ -27,8 +27,15 @@ class GameBoard {
       default:
         const shipHitted = this.ships[target];
         shipHitted.ship.hit(y - shipHitted.start);
-        this.board[x][y] = 'hit';
+        shipHitted.ship.isSunk()
+          ? this.shipHitBoard(shipHitted, x)
+          : (this.board[x][y] = 'hit');
         break;
+    }
+  }
+  shipHitBoard(ship, x) {
+    for (let i = 0; i < ship.ship.blocks; i++) {
+      this.board[x][ship.start + i] = 'sunk';
     }
   }
   allSunk() {

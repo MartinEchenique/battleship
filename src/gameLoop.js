@@ -16,60 +16,74 @@ class Game {
     this.nextPlayer = this.playerTwo;
   }
   placeShips() {
-    for (let index = 0; index < 5; index++) {
-      this.playerOne.gameBoard.placeShip(2, index, 5);
-      this.playerTwo.gameBoard.placeShip(2, index, 1);
-    }
+    this.dragAndDropBoat();
+    this.playerTwo.putBoats();
+    events.emit('board changed', this.playerTwo);
   }
   doShoot(i = null, j = null) {
     let x = i;
     let y = j;
-    console.log(i, j);
     if (this.currentPlayer.name === 'pc') {
       [x, y] = this.currentPlayer.attack();
     }
-    this.nextPlayer.gameBoard.receiveAttack(x, y);
-    events.emit('player attack', this.nextPlayer);
-    this.currentPlayer = this.nextPlayer;
-    this.currentPlayer === this.playerOne
-      ? (this.nextPlayer = this.playerTwo)
-      : (this.nextPlayer = this.playerOne);
-    return [this.currentPlayer, this.nextPlayer];
+    if (
+      this.nextPlayer.gameBoard.board[x][y] !== 'miss' &&
+      this.nextPlayer.gameBoard.board[x][y] !== 'hit'
+    ) {
+      this.nextPlayer.gameBoard.receiveAttack(x, y);
+      events.emit('player attack', this.nextPlayer);
+      this.currentPlayer = this.nextPlayer;
+      this.currentPlayer === this.playerOne
+        ? (this.nextPlayer = this.playerTwo)
+        : (this.nextPlayer = this.playerOne);
+      //return [this.currentPlayer, this.nextPlayer];
+    }
+  }
+  dragAndDropBoat() {
+    events.on('boat dragged and dropped', (data) => {
+      let row = +data[0][0];
+      let column = +data[0][1];
+      let length = data[1];
+      this.playerOne.gameBoard.placeShip(length, row, column);
+    });
+    events.emit('board changed', this.playerOne);
   }
 }
 function main() {
   const game = new Game();
   events.on('create players', (players) => {
     game.createPlayers(players);
+    events.emit('board changed', game.playerOne);
+    events.emit('board changed', game.playerTwo);
+
     gameLoop(game);
   });
 }
+
 async function gameLoop(game) {
   game.placeShips();
+  await new Promise((resolve) => {
+    events.on('all boats droped', () => resolve());
+  });
   do {
-    [game.currentPlayer, game.nextPlayer] = await new Promise(
-      async (resolve) => {
-        if (game.currentPlayer.name !== 'pc') {
-          let [i, j] = await new Promise((resolve) =>
-            document.getElementById('playerOneBoard').addEventListener(
-              'click',
-              events.on('square clicked', (data) => resolve(data)),
-            ),
-          );
+    await new Promise(async (resolve) => {
+      if (game.currentPlayer.name !== 'pc') {
+        let [i, j] = await new Promise((resolve) =>
+          events.on('square clicked', (data) => resolve(data)),
+        );
 
-          let array = game.doShoot(i, j);
-          resolve(array);
-        } else {
-          let array = game.doShoot();
-          resolve(array);
-        }
-      },
-    );
+        game.doShoot(i, j);
+        resolve();
+      } else {
+        game.doShoot();
+        resolve();
+      }
+    });
   } while (
     !game.playerOne.gameBoard.allSunk() &&
     !game.playerTwo.gameBoard.allSunk()
   );
-  console.log('gameOver');
+  window.alert('gameOver');
 }
 
 export { main };

@@ -7,3 +7,8 @@ it('pc player makes a play', () => {
   const player = new Player('Name', true);
   expect(player.attack()).toEqual([5, 5]);
 });
+
+it('pc player put boat', () => {
+  const player = new Player('Name', true);
+  expect(player.putBoat()).toEqual([5, 5]);
+});
